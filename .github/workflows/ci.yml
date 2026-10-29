@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build and test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore tests/SimuladorIndustrial.Core.Tests/SimuladorIndustrial.Core.Tests.csproj
+
+      - name: Test core
+        run: dotnet test tests/SimuladorIndustrial.Core.Tests/SimuladorIndustrial.Core.Tests.csproj --configuration Release --no-restore
+
+      - name: Validate sample scene
+        run: dotnet run --project src/SimuladorIndustrial.Cli --configuration Release -- samples/celula-envase.scene.json

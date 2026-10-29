@@ -1,0 +1,203 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Simulador Industrial 3D 0.2.0",
+  "documentNamespace": "https://simulador-industrial.invalid/spdx/0.2.0/2026-10-27",
+  "creationInfo": {
+    "created": "2026-10-27T06:00:00Z",
+    "creators": [
+      "Tool: inventario-manual-simulador-industrial-1.0"
+    ],
+    "licenseListVersion": "3.27"
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-SimuladorIndustrial"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-SimuladorIndustrial",
+      "name": "Simulador Industrial 3D",
+      "versionInfo": "0.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Código e assets autorais; a licença do projeto ainda não foi escolhida pelo titular."
+    },
+    {
+      "SPDXID": "SPDXRef-Package-Godot",
+      "name": "Godot Engine",
+      "versionInfo": "4.7.2",
+      "downloadLocation": "https://github.com/godotengine/godot/releases/tag/4.7.2-stable",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2014-present Godot Engine contributors; Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur",
+      "primaryPackagePurpose": "RUNTIME",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/godotengine/godot@4.7.2-stable"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-GodotDotNetSdk",
+      "name": "Godot.NET.Sdk",
+      "versionInfo": "4.7.2",
+      "downloadLocation": "https://www.nuget.org/packages/Godot.NET.Sdk/4.7.2",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright Godot Engine contributors",
+      "primaryPackagePurpose": "BUILD_TOOL",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/Godot.NET.Sdk@4.7.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-DotNetRuntime",
+      "name": "Microsoft .NET Runtime",
+      "versionInfo": "8.0",
+      "downloadLocation": "https://github.com/dotnet/runtime",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "primaryPackagePurpose": "RUNTIME",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/dotnet-runtime@8.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-MicrosoftNetTestSdk",
+      "name": "Microsoft.NET.Test.Sdk",
+      "versionInfo": "17.8.0",
+      "downloadLocation": "https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/17.8.0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright Microsoft Corporation",
+      "primaryPackagePurpose": "BUILD_TOOL",
+      "comment": "Dependência de desenvolvimento; não distribuída no aplicativo exportado.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/Microsoft.NET.Test.Sdk@17.8.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-Xunit",
+      "name": "xunit",
+      "versionInfo": "2.5.3",
+      "downloadLocation": "https://www.nuget.org/packages/xunit/2.5.3",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "primaryPackagePurpose": "BUILD_TOOL",
+      "comment": "Dependência de desenvolvimento; não distribuída no aplicativo exportado.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/xunit@2.5.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-XunitRunnerVisualStudio",
+      "name": "xunit.runner.visualstudio",
+      "versionInfo": "2.5.3",
+      "downloadLocation": "https://www.nuget.org/packages/xunit.runner.visualstudio/2.5.3",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "primaryPackagePurpose": "BUILD_TOOL",
+      "comment": "Dependência de desenvolvimento; não distribuída no aplicativo exportado.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/xunit.runner.visualstudio@2.5.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-CoverletCollector",
+      "name": "coverlet.collector",
+      "versionInfo": "6.0.0",
+      "downloadLocation": "https://www.nuget.org/packages/coverlet.collector/6.0.0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) coverlet contributors",
+      "primaryPackagePurpose": "BUILD_TOOL",
+      "comment": "Dependência de desenvolvimento; não distribuída no aplicativo exportado.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/coverlet.collector@6.0.0"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SimuladorIndustrial",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-Godot"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-GodotDotNetSdk",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-SimuladorIndustrial",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-DotNetRuntime"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-MicrosoftNetTestSdk",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Xunit",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XunitRunnerVisualStudio",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-CoverletCollector",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-SimuladorIndustrial"
+    }
+  ]
+}

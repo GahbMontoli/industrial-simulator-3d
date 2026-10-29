@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.vscode/
+TestResults/
+*.user
+*.suo
+*.nupkg
+artifacts/
+logs/
+.tools/
+.godot/
+dist/
+tests/interop/evidence/

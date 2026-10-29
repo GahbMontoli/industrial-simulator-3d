@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "1145df45-16b5-4aaf-a393-750ba1ab5dc6",
+  "name": "Célula de Envase 01",
+  "simulation": {
+    "logicStepMilliseconds": 20,
+    "maxCatchUpSteps": 10,
+    "gravity": {
+      "x": 0,
+      "y": -9.81,
+      "z": 0
+    }
+  },
+  "components": [
+    {
+      "id": "479bd27c-008a-4274-aa24-3cb8740fed75",
+      "type": "source.container.v1",
+      "transform": {
+        "position": { "x": -2.2, "y": 0.5, "z": 0 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {
+        "intervalSeconds": 4.0
+      }
+    },
+    {
+      "id": "fd32e18e-b88b-4633-ae28-58aec882cc97",
+      "type": "conveyor.straight.v1",
+      "transform": {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {
+        "lengthMeters": 2.0,
+        "speedMetersPerSecond": 0.3
+      }
+    },
+    {
+      "id": "76d89efd-778e-4ee5-9385-b94cb139a208",
+      "type": "sensor.diffuse.v1",
+      "transform": {
+        "position": { "x": 0.6, "y": 0.65, "z": 0.35 },
+        "rotationDegrees": { "x": 0, "y": 90, "z": 0 }
+      },
+      "parameters": {
+        "rangeMeters": 0.8
+      }
+    },
+    {
+      "id": "2b7d150a-642c-47a2-aa67-99dbce257bfe",
+      "type": "actuator.stop-gate.v1",
+      "transform": {
+        "position": { "x": 0.9, "y": 0.45, "z": 0 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "ac710acf-4f11-47b5-bdf1-2cd1a5638e09",
+      "type": "process.filling-head.v1",
+      "transform": {
+        "position": { "x": 0.6, "y": 1.4, "z": 0 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {
+        "flowLitersPerSecond": 0.25
+      }
+    },
+    {
+      "id": "6be784f8-99da-4b9e-8493-15cdd288ba30",
+      "type": "sink.remover.v1",
+      "transform": {
+        "position": { "x": 2.82, "y": 0, "z": 0 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "55c5b5f6-942a-4e63-a3c0-fb89d2538b48",
+      "type": "process.tank.v1",
+      "transform": {
+        "position": { "x": 0.6, "y": 0, "z": -1.58 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {
+        "capacityLiters": 20.0
+      }
+    },
+    {
+      "id": "d6d03f42-73cc-445e-ab1b-9f7fe0d9dbb3",
+      "type": "actuator.fill-valve.v1",
+      "transform": {
+        "position": { "x": 0.6, "y": 1.78, "z": -0.78 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "2589d952-e899-41e9-832e-d2e1139212cc",
+      "type": "actuator.discharge-valve.v1",
+      "transform": {
+        "position": { "x": 0.6, "y": 0.88, "z": -2.49 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "fe30b1c0-2cbb-4ef8-8741-ec5b122c1cf8",
+      "type": "operator.button.v1",
+      "transform": {
+        "position": { "x": 1.57, "y": 1.1, "z": 1.46 },
+        "rotationDegrees": { "x": -16, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "8396119a-104f-408b-bd48-b9a96a65b9d0",
+      "type": "indicator.light.v1",
+      "transform": {
+        "position": { "x": 1.88, "y": 1.12, "z": 1.45 },
+        "rotationDegrees": { "x": 0, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    },
+    {
+      "id": "2e01c03a-8fc1-4ec4-a075-9e10ce117813",
+      "type": "indicator.display.v1",
+      "transform": {
+        "position": { "x": 1.72, "y": 1.32, "z": 1.4 },
+        "rotationDegrees": { "x": -16, "y": 0, "z": 0 }
+      },
+      "parameters": {}
+    }
+  ],
+  "tags": [
+    {
+      "id": "9cbc925f-99c0-4d83-a9ee-04712cc70355",
+      "name": "Recipiente detectado",
+      "canonicalName": "recipienteDetectado",
+      "dataType": "bool",
+      "direction": "plcInput",
+      "address": 0,
+      "source": "76d89efd-778e-4ee5-9385-b94cb139a208.detected"
+    },
+    {
+      "id": "c8a7b92c-265f-405d-a1c4-a83819e3778e",
+      "name": "Bloqueador fechado",
+      "canonicalName": "bloqueadorFechado",
+      "dataType": "bool",
+      "direction": "plcOutput",
+      "address": 0,
+      "source": "2b7d150a-642c-47a2-aa67-99dbce257bfe.closed"
+    },
+    {
+      "id": "913c7800-42bc-4ae8-991e-a57132cd0c3d",
+      "name": "Válvula de enchimento",
+      "canonicalName": "valvulaEnchimento",
+      "dataType": "bool",
+      "direction": "plcOutput",
+      "address": 1,
+      "source": "ac710acf-4f11-47b5-bdf1-2cd1a5638e09.valve"
+    },
+    {
+      "id": "3224d863-7428-4554-a323-af9d7d623944",
+      "name": "Volume preenchido",
+      "canonicalName": "volumePreenchido",
+      "dataType": "float32",
+      "direction": "plcInput",
+      "address": 0,
+      "source": "ac710acf-4f11-47b5-bdf1-2cd1a5638e09.volume"
+    }
+  ],
+  "connections": [
+    {
+      "id": "e159b7d0-0c9f-41e8-9471-5e73fd076d6d",
+      "name": "OpenPLC local",
+      "driver": "modbusTcp",
+      "role": "server",
+      "host": "127.0.0.1",
+      "port": 5020,
+      "unitId": 1
+    }
+  ]
+}

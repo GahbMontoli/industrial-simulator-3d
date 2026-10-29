@@ -28,6 +28,9 @@
     <Content Include="..\..\samples\celula-envase.scene.json"
              Link="samples\celula-envase.scene.json"
              CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\samples\component-packages\motor-basico.silabcomponent"
+             Link="samples\motor-basico.silabcomponent"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 using Godot;
+using SimuladorIndustrial.Core.Components;
 using SimuladorIndustrial.Core.Editing;
 using SimuladorIndustrial.Core.Persistence;
 
@@ -13,30 +14,16 @@ public sealed partial class SceneEditor3DController : Node3D
     public const float TranslationSnapMeters = 0.25f;
     public const float RotationSnapDegrees = 15f;
 
-    private static readonly (string Type, string Label)[] Catalog =
-    [
-        ("source.generator.v1", "Gerador de recipientes"),
-        ("source.container.v1", "Fonte da cena de envase"),
-        ("sink.remover.v1", "Removedor"),
-        ("conveyor.straight.v1", "Esteira reta"),
-        ("sensor.diffuse.v1", "Sensor difuso"),
-        ("actuator.stop-gate.v1", "Bloqueador pneumático"),
-        ("process.filling-head.v1", "Cabeçote de envase"),
-        ("process.tank.v1", "Tanque"),
-        ("actuator.fill-valve.v1", "Válvula de enchimento"),
-        ("actuator.discharge-valve.v1", "Válvula de descarga"),
-        ("operator.button.v1", "Botão"),
-        ("indicator.light.v1", "Luz piloto"),
-        ("indicator.display.v1", "Display")
-    ];
-
     private SceneEditor? _editor;
+    private ComponentCatalog _componentCatalog = null!;
+    private IReadOnlyList<ComponentRegistration> _catalogEntries = [];
     private Node3D _proxyRoot = null!;
     private CanvasLayer _canvasLayer = null!;
     private PanelContainer _panel = null!;
     private Button _toggleButton = null!;
     private Tree _sceneTree = null!;
     private OptionButton _catalogPicker = null!;
+    private FileDialog _packageDialog = null!;
     private Label _selectionLabel = null!;
     private Label _historyLabel = null!;
     private Label _statusLabel = null!;
@@ -111,6 +98,7 @@ public sealed partial class SceneEditor3DController : Node3D
         Name = "EditorDeCena3D";
         _proxyRoot = new Node3D { Name = "ProxiesEditaveis", Visible = false };
         AddChild(_proxyRoot);
+        ReloadComponentCatalog();
         BuildInterface();
 
         if (_editor is not null)
@@ -301,14 +289,30 @@ public sealed partial class SceneEditor3DController : Node3D
         catalogRow.AddThemeConstantOverride("separation", 6);
         content.AddChild(catalogRow);
         _catalogPicker = new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        foreach (var (_, label) in Catalog)
-        {
-            _catalogPicker.AddItem(label);
-        }
+        PopulateCatalogPicker();
         catalogRow.AddChild(_catalogPicker);
         var addButton = CreateButton("+ ADICIONAR", new Color(0.08f, 0.52f, 0.37f));
         addButton.Pressed += AddCatalogComponent;
         catalogRow.AddChild(addButton);
+
+        var packageRow = new HBoxContainer();
+        packageRow.AddThemeConstantOverride("separation", 6);
+        content.AddChild(packageRow);
+        var installPackageButton = CreateButton("INSTALAR COMPONENTE...", new Color(0.31f, 0.24f, 0.58f));
+        installPackageButton.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        installPackageButton.Pressed += ShowPackageInstaller;
+        packageRow.AddChild(installPackageButton);
+
+        _packageDialog = new FileDialog
+        {
+            Title = "Instalar pacote de componentes",
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            Access = FileDialog.AccessEnum.Filesystem,
+            Size = new Vector2I(900, 620)
+        };
+        _packageDialog.AddFilter($"*{ComponentPackageInstaller.PackageExtension}", "Pacote do Simulador Industrial");
+        _packageDialog.FileSelected += InstallComponentPackage;
+        _canvasLayer.AddChild(_packageDialog);
 
         content.AddChild(CreateMoveGrid());
 
@@ -359,19 +363,85 @@ public sealed partial class SceneEditor3DController : Node3D
 
     private void AddCatalogComponent()
     {
+        if (_catalogEntries.Count == 0)
+        {
+            SetStatus("Nenhum componente está disponível no catálogo.", error: true);
+            return;
+        }
+
         ExecuteMutation(
             () =>
             {
-                var index = Math.Clamp(_catalogPicker.Selected, 0, Catalog.Length - 1);
+                var index = Math.Clamp(_catalogPicker.Selected, 0, _catalogEntries.Count - 1);
+                var registration = _catalogEntries[index];
+                var parameters = registration.Definition.Parameters.ToDictionary(
+                    parameter => parameter.Name,
+                    parameter => parameter.DefaultValue.Clone(),
+                    StringComparer.Ordinal);
                 var componentId = _editor!.AddComponent(
-                    Catalog[index].Type,
+                    registration.Definition.Type,
                     new TransformDocument(
                         new Vector3Document(0, 0, 0),
-                        new Vector3Document(0, 0, 0)));
+                        new Vector3Document(0, 0, 0)),
+                    parameters);
                 _editor.SelectComponent(componentId);
             },
             "Componente adicionado.");
     }
+
+    private void ShowPackageInstaller()
+    {
+        _packageDialog.PopupCentered();
+    }
+
+    private void InstallComponentPackage(string packagePath)
+    {
+        try
+        {
+            var installation = ComponentPackageInstaller.Install(packagePath, GetComponentPackageRoot());
+            ReloadComponentCatalog();
+            PopulateCatalogPicker();
+            RefreshAll(
+                $"Pacote {installation.Manifest.DisplayName} {installation.Manifest.Version} instalado com " +
+                $"{installation.Manifest.Components.Count} componente(s).");
+        }
+        catch (Exception exception) when (
+            exception is ComponentPackageException or IOException or UnauthorizedAccessException)
+        {
+            SetStatus($"Falha ao instalar pacote: {exception.Message}", error: true);
+            GD.PushError($"Falha ao instalar pacote de componentes: {exception}");
+        }
+    }
+
+    private void ReloadComponentCatalog()
+    {
+        var result = ComponentCatalog.LoadDefault(GetComponentPackageRoot());
+        _componentCatalog = result.Catalog;
+        _catalogEntries = result.Catalog.Components;
+        foreach (var diagnostic in result.Diagnostics)
+        {
+            GD.PushWarning(diagnostic);
+        }
+    }
+
+    private void PopulateCatalogPicker()
+    {
+        if (!GodotObject.IsInstanceValid(_catalogPicker))
+        {
+            return;
+        }
+
+        _catalogPicker.Clear();
+        foreach (var registration in _catalogEntries)
+        {
+            var source = registration.IsBuiltIn ? "NATIVO" : registration.PackageId;
+            _catalogPicker.AddItem(
+                $"{registration.Definition.Category} • {registration.Definition.DisplayName}  [{source}]");
+        }
+    }
+
+    private static string GetComponentPackageRoot() =>
+        ProjectSettings.GlobalizePath("user://component-packages");
 
     private void MoveSelected(float x, float y, float z)
     {
@@ -627,7 +697,38 @@ public sealed partial class SceneEditor3DController : Node3D
             roughness: 0.48f,
             transparent: true,
             emission: selected ? new Color(0.55f, 0.22f, 0.01f) : null);
-        ProceduralGeometry.AddBox(root, "Volume", size, new Vector3(0f, size.Y / 2f, 0f), material);
+        var visualKind = _componentCatalog.TryGet(component.Type, out var registration)
+            ? registration.Definition.Visual.Kind
+            : ComponentVisualKind.Box;
+        switch (visualKind)
+        {
+            case ComponentVisualKind.Cylinder:
+                ProceduralGeometry.AddCylinder(
+                    root,
+                    "Volume",
+                    MathF.Max(size.X, size.Z) / 2f,
+                    size.Y,
+                    new Vector3(0f, size.Y / 2f, 0f),
+                    material);
+                break;
+            case ComponentVisualKind.Sphere:
+                ProceduralGeometry.AddSphere(
+                    root,
+                    "Volume",
+                    MathF.Max(size.X, MathF.Max(size.Y, size.Z)) / 2f,
+                    new Vector3(0f, size.Y / 2f, 0f),
+                    material);
+                break;
+            default:
+                // Model packages use the declared envelope until runtime GLB loading is enabled.
+                ProceduralGeometry.AddBox(
+                    root,
+                    "Volume",
+                    size,
+                    new Vector3(0f, size.Y / 2f, 0f),
+                    material);
+                break;
+        }
         ProceduralGeometry.AddWorldLabel(
             root,
             HumanizeType(component.Type),
@@ -728,12 +829,18 @@ public sealed partial class SceneEditor3DController : Node3D
         return normalized < 0d ? normalized + 360d : normalized;
     }
 
-    private static string HumanizeType(string type) =>
-        Catalog.FirstOrDefault(item => string.Equals(item.Type, type, StringComparison.OrdinalIgnoreCase)).Label
-        ?? type;
+    private string HumanizeType(string type) =>
+        _componentCatalog.TryGet(type, out var registration)
+            ? registration.Definition.DisplayName
+            : type;
 
-    private static Vector3 ProxySize(string type)
+    private Vector3 ProxySize(string type)
     {
+        if (_componentCatalog.TryGet(type, out var registration))
+        {
+            return ToGodot(registration.Definition.Visual.Size);
+        }
+
         if (type.Contains("conveyor", StringComparison.OrdinalIgnoreCase))
         {
             return new Vector3(1.5f, 0.20f, 0.70f);
@@ -753,8 +860,13 @@ public sealed partial class SceneEditor3DController : Node3D
         return new Vector3(0.42f, 0.52f, 0.42f);
     }
 
-    private static Color ProxyColor(string type)
+    private Color ProxyColor(string type)
     {
+        if (_componentCatalog.TryGet(type, out var registration))
+        {
+            return ParsePackageColor(registration.Definition.Visual.Color);
+        }
+
         if (type.Contains("sensor", StringComparison.OrdinalIgnoreCase))
         {
             return new Color(1f, 0.46f, 0.10f, 0.34f);
@@ -772,6 +884,18 @@ public sealed partial class SceneEditor3DController : Node3D
         }
 
         return new Color(0.18f, 0.62f, 1f, 0.30f);
+    }
+
+    private static Color ParsePackageColor(string hexadecimal)
+    {
+        var value = hexadecimal.AsSpan(1);
+        var red = Convert.ToByte(value[..2].ToString(), 16) / 255f;
+        var green = Convert.ToByte(value.Slice(2, 2).ToString(), 16) / 255f;
+        var blue = Convert.ToByte(value.Slice(4, 2).ToString(), 16) / 255f;
+        var alpha = value.Length == 8
+            ? Convert.ToByte(value.Slice(6, 2).ToString(), 16) / 255f
+            : 0.34f;
+        return new Color(red, green, blue, alpha);
     }
 
     private static PanelContainer CreatePanel()

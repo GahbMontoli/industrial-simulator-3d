@@ -42,6 +42,11 @@ Em **Ajuda**, é possível configurar escala de 75% a 150%, página inicial, exi
 
 O painel lateral contém árvore, catálogo, transformações numéricas, editor de tags, forçamento e injeção de falhas. O botão **ABRIR** recarrega a última cena salva pelo editor.
 
+O botão **INSTALAR COMPONENTE...** aceita pacotes `.silabcomponent` validados.
+Após a instalação, os componentes aparecem no catálogo com a identificação do
+pacote de origem. Consulte [COMPONENT_PACKAGES.md](COMPONENT_PACKAGES.md) para o
+contrato do manifesto, criação de pacotes e limites de segurança.
+
 ## Modbus TCP
 
 Abra **Conexões** (`Alt+5`), selecione cliente ou servidor, informe host, porta e Unit ID e escolha **VALIDAR E APLICAR**. A configuração inválida é rejeitada sem substituir a conexão atual. Para reutilizá-la após reiniciar, salve a cena no Editor 3D.

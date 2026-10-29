@@ -17,6 +17,7 @@ O MVP entrega uma célula de envase 3D executável e editável:
 - primeira execução guiada, escala ajustável, página inicial configurável e confirmações para ações críticas;
 - controles de executar, pausar, reiniciar e passo único, com métricas, tags e timeline;
 - editor 3D com árvore, catálogo, gizmo, propriedades, tags, força/falhas, undo/redo e persistência;
+- catálogo extensível com pacotes `.silabcomponent`, instalação pelo editor e validação contra travessia de diretório ou código executável;
 - PLC demonstrativo automático para executar o ciclo completo;
 - Modbus TCP cliente/servidor com FC01/02/03/04/05/06/15/16, monitor, qualidade e reconexão;
 - relógio lógico de passo fixo;
@@ -75,6 +76,10 @@ Editor 3D:
 - `Tab`: selecionar o próximo componente;
 - `WASD`, `R/F`, `Q/E`: mover e girar com snap;
 - `Ctrl+D`, `Delete`, `Ctrl+Z`, `Ctrl+Y`, `Ctrl+S`: duplicar, excluir, desfazer, refazer e salvar.
+- **INSTALAR COMPONENTE...**: instala um pacote local e recarrega o catálogo sem reiniciar.
+
+O formato, as garantias de segurança e o pacote de motor demonstrativo estão em
+[COMPONENT_PACKAGES.md](docs/COMPONENT_PACKAGES.md).
 
 ![Editor de cena 3D](docs/images/editor-3d.png)
 

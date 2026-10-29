@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "packageId": "org.simuladorindustrial.samples.motor",
+  "version": "1.0.0",
+  "displayName": "Motor industrial básico",
+  "author": "Simulador Industrial",
+  "description": "Pacote demonstrativo autoral para validar instalação, catálogo e persistência de componentes.",
+  "license": "MIT",
+  "minimumHostVersion": "0.2.0",
+  "components": [
+    {
+      "type": "sample.motor-induction.v1",
+      "displayName": "Motor de indução",
+      "category": "Atuadores",
+      "description": "Motor genérico de laboratório com comando, estado e velocidade nominal.",
+      "visual": {
+        "kind": "cylinder",
+        "size": {
+          "x": 0.8,
+          "y": 0.65,
+          "z": 0.8
+        },
+        "color": "#326A9C"
+      },
+      "ports": [
+        {
+          "name": "runCommand",
+          "displayName": "Comando de partida",
+          "direction": "input",
+          "dataType": "bool"
+        },
+        {
+          "name": "running",
+          "displayName": "Motor em movimento",
+          "direction": "output",
+          "dataType": "bool"
+        },
+        {
+          "name": "speedRpm",
+          "displayName": "Velocidade",
+          "direction": "output",
+          "dataType": "float32"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "nominalSpeedRpm",
+          "displayName": "Velocidade nominal (rpm)",
+          "dataType": "float32",
+          "required": true,
+          "defaultValue": 1750.0,
+          "minimum": 1.0,
+          "maximum": 10000.0
+        }
+      ]
+    }
+  ]
+}

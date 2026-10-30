@@ -42,6 +42,12 @@ Com a cena de exemplo, a execução contém 5 cenários de 8 segundos, totalizan
 2.000 passos lógicos de 20 ms. O CSV é deliberadamente compacto: uma linha por
 cenário, sem interface ou telemetria de alta frequência.
 
+A mesma execução gera `fault-study.manifest.json`. Esse manifesto registra o
+`runId`, a versão do contrato, a quantidade de linhas, a classificação
+`synthetic`, o limite da evidência e hashes SHA-256 da cena de origem e do CSV.
+Isso permite detectar troca ou alteração de arquivos antes da atualização no
+Power BI sem transformar a simulação em evidência de campo.
+
 ## Leitura correta dos resultados
 
 Uma condição `expectationMet=true` demonstra que o modelo reproduziu a resposta

@@ -209,15 +209,12 @@ static async Task<int> RunFaultStudyAsync(
     if (!string.IsNullOrWhiteSpace(requestedOutputPath))
     {
         var outputPath = Path.GetFullPath(requestedOutputPath);
-        var outputDirectory = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrWhiteSpace(outputDirectory))
-        {
-            Directory.CreateDirectory(outputDirectory);
-        }
-
-        await using var output = File.Create(outputPath);
-        await FillingCellFaultStudy.WriteCsvAsync(output, results);
-        Console.WriteLine($"CSV: {outputPath}");
+        var package = await FillingCellFaultStudyPackageExporter.WriteAsync(
+            outputPath,
+            scenePath,
+            results);
+        Console.WriteLine($"CSV: {package.CsvPath}");
+        Console.WriteLine($"Manifesto: {package.ManifestPath}");
     }
 
     return results.All(result => result.ExpectationMet) ? 0 : 3;

@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using SimuladorIndustrial.Core.Scenarios;
 using SimuladorIndustrial.Core.Tags;
 
@@ -60,6 +62,118 @@ public sealed class FillingCellFaultStudyTests
     }
 
     [Fact]
+    public async Task WritesTraceableSyntheticPackageForPowerBi()
+    {
+        var fixture = CreateFixture();
+        var results = FillingCellFaultStudy.Run(fixture.Tags, fixture.Bindings);
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"simulador-fault-study-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var sourcePath = Path.Combine(directory, "scene.json");
+            var csvPath = Path.Combine(directory, "fault-study.csv");
+            await File.WriteAllTextAsync(sourcePath, "{\"schemaVersion\":1}");
+            var exportedAtUtc = new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero);
+
+            var package = await FillingCellFaultStudyPackageExporter.WriteAsync(
+                csvPath,
+                sourcePath,
+                results,
+                runId: "fault-study-test",
+                exportedAtUtc);
+
+            Assert.True(File.Exists(package.CsvPath));
+            Assert.True(File.Exists(package.ManifestPath));
+            Assert.Equal("fault-study-test", package.Manifest.RunId);
+            Assert.Equal("synthetic", package.Manifest.EvidenceClass);
+            Assert.Equal("valid", package.Manifest.QualityStatus);
+            Assert.Equal(5, package.Manifest.RowCount);
+            Assert.True(package.Manifest.AllExpectationsMet);
+            Assert.Equal(ComputeSha256(sourcePath), package.Manifest.SourceSha256);
+            Assert.Equal(ComputeSha256(csvPath), package.Manifest.CsvSha256);
+
+            using var manifest = JsonDocument.Parse(
+                await File.ReadAllTextAsync(package.ManifestPath));
+            Assert.Equal(
+                "industrial-simulator-3d",
+                manifest.RootElement.GetProperty("projectId").GetString());
+            Assert.Contains(
+                "não representa evidência de campo",
+                manifest.RootElement.GetProperty("evidenceLimit").GetString(),
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RejectsManifestCollisionWithoutChangingSource()
+    {
+        var fixture = CreateFixture();
+        var results = FillingCellFaultStudy.Run(fixture.Tags, fixture.Bindings);
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"simulador-fault-study-collision-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var sourcePath = Path.Combine(directory, "fault-study.manifest.json");
+            var csvPath = Path.Combine(directory, "fault-study.csv");
+            const string source = "{\"source\":true}";
+            await File.WriteAllTextAsync(sourcePath, source);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                FillingCellFaultStudyPackageExporter.WriteAsync(csvPath, sourcePath, results));
+
+            Assert.Equal(source, await File.ReadAllTextAsync(sourcePath));
+            Assert.False(File.Exists(csvPath));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RestoresPreviousCsvWhenManifestPromotionFails()
+    {
+        var fixture = CreateFixture();
+        var results = FillingCellFaultStudy.Run(fixture.Tags, fixture.Bindings);
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"simulador-fault-study-rollback-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var sourcePath = Path.Combine(directory, "scene.json");
+            var csvPath = Path.Combine(directory, "fault-study.csv");
+            var manifestPath = Path.ChangeExtension(csvPath, ".manifest.json");
+            await File.WriteAllTextAsync(sourcePath, "{\"schemaVersion\":1}");
+            await File.WriteAllTextAsync(csvPath, "previous-csv");
+            Directory.CreateDirectory(manifestPath);
+
+            await Assert.ThrowsAsync<IOException>(() =>
+                FillingCellFaultStudyPackageExporter.WriteAsync(csvPath, sourcePath, results));
+
+            Assert.Equal("previous-csv", await File.ReadAllTextAsync(csvPath));
+            Assert.True(Directory.Exists(manifestPath));
+            Assert.Empty(Directory.GetFiles(directory, ".*.tmp"));
+            Assert.Empty(Directory.GetFiles(directory, ".*.bak"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void RejectsTargetAboveProcessCapacity()
     {
         var fixture = CreateFixture();
@@ -78,6 +192,9 @@ public sealed class FillingCellFaultStudyTests
         IReadOnlyList<FillingCellFaultStudyResult> results,
         FillingCellFaultScenario scenario) =>
         results.Single(result => result.Scenario == scenario);
+
+    private static string ComputeSha256(string path) =>
+        Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
     private static StudyFixture CreateFixture()
     {

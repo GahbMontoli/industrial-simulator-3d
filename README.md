@@ -109,8 +109,11 @@ dotnet run --project .\src\SimuladorIndustrial.Cli -- `
 ```
 
 A campanha mede volume físico e indicado, tempo até o alvo, válvula ativa na
-capacidade e divergência entre comando PLC e estado efetivo. Interpretação e
-limites estão em [Estudo de injeção de falhas](docs/FAULT_STUDY.md).
+capacidade e divergência entre comando PLC e estado efetivo. Além do CSV, a
+execução cria `fault-study.manifest.json` com versão do contrato, identificador
+da execução, classificação da evidência e hashes SHA-256 da cena e do CSV.
+Interpretação e limites estão em
+[Estudo de injeção de falhas](docs/FAULT_STUDY.md).
 
 ## Testar
 

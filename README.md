@@ -27,6 +27,7 @@ O MVP entrega uma célula de envase 3D executável e editável:
 - formato de cena JSON próprio, versionado, migrável e limitado a 8 MiB;
 - cenário autoral de célula de envase;
 - aplicativo de console para validação headless;
+- campanha headless de injeção de falhas com métricas de divergência e exportação CSV;
 - testes automatizados.
 
 ## Requisitos
@@ -96,6 +97,20 @@ Diagnóstico e conexões:
 ```powershell
 dotnet run --project .\src\SimuladorIndustrial.Cli -- .\samples\celula-envase.scene.json
 ```
+
+Para comparar o ciclo nominal com falhas determinísticas de sensor e atuador sem
+abrir a interface 3D:
+
+```powershell
+dotnet run --project .\src\SimuladorIndustrial.Cli -- `
+  --fault-study `
+  --scene .\samples\celula-envase.scene.json `
+  --output .\artifacts\fault-study.csv
+```
+
+A campanha mede volume físico e indicado, tempo até o alvo, válvula ativa na
+capacidade e divergência entre comando PLC e estado efetivo. Interpretação e
+limites estão em [Estudo de injeção de falhas](docs/FAULT_STUDY.md).
 
 ## Testar
 

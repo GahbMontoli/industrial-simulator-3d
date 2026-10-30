@@ -11,7 +11,8 @@ static async Task<int> RunAsync(string[] arguments)
 {
     try
     {
-        var scenePath = ResolveScenePath(arguments);
+        var options = ParseOptions(arguments);
+        var scenePath = ResolveScenePath(options.ScenePath);
         await using var sceneStream = File.OpenRead(scenePath);
         var scene = await SceneSerializer.DeserializeAsync(sceneStream);
 
@@ -27,6 +28,19 @@ static async Task<int> RunAsync(string[] arguments)
         var fillValve = FindTag(scene, "valvulaEnchimento");
         var filledVolume = FindTag(scene, "volumePreenchido");
         var flow = ReadFillingFlow(scene);
+
+        if (options.RunFaultStudy)
+        {
+            return await RunFaultStudyAsync(
+                scene,
+                scenePath,
+                containerDetected,
+                gateClosed,
+                fillValve,
+                filledVolume,
+                flow,
+                options.OutputPath);
+        }
 
         var fillingCell = new FillingCellSystem(
             containerDetected.Id,
@@ -80,16 +94,66 @@ static async Task<int> RunAsync(string[] arguments)
     }
 }
 
-static string ResolveScenePath(string[] arguments)
+static CliOptions ParseOptions(string[] arguments)
 {
-    if (arguments.Length > 1)
+    string? scenePath = null;
+    string? outputPath = null;
+    var runFaultStudy = false;
+
+    for (var index = 0; index < arguments.Length; index++)
     {
-        throw new InvalidOperationException("Informe no máximo um caminho de cena.");
+        switch (arguments[index])
+        {
+            case "--fault-study":
+                runFaultStudy = true;
+                break;
+            case "--scene":
+                scenePath = ReadOptionValue(arguments, ref index, "--scene");
+                break;
+            case "--output":
+                outputPath = ReadOptionValue(arguments, ref index, "--output");
+                break;
+            default:
+                if (arguments[index].StartsWith("--", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Opção desconhecida: {arguments[index]}");
+                }
+
+                if (scenePath is not null)
+                {
+                    throw new InvalidOperationException("Informe apenas um caminho de cena.");
+                }
+
+                scenePath = arguments[index];
+                break;
+        }
     }
 
-    if (arguments.Length == 1)
+    if (outputPath is not null && !runFaultStudy)
     {
-        return Path.GetFullPath(arguments[0]);
+        throw new InvalidOperationException("A opção --output requer --fault-study.");
+    }
+
+    return new CliOptions(scenePath, runFaultStudy, outputPath);
+}
+
+static string ReadOptionValue(string[] arguments, ref int index, string option)
+{
+    if (index + 1 >= arguments.Length ||
+        arguments[index + 1].StartsWith("--", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException($"A opção {option} requer um valor.");
+    }
+
+    index++;
+    return arguments[index];
+}
+
+static string ResolveScenePath(string? requestedPath)
+{
+    if (!string.IsNullOrWhiteSpace(requestedPath))
+    {
+        return Path.GetFullPath(requestedPath);
     }
 
     var fileName = "celula-envase.scene.json";
@@ -104,6 +168,59 @@ static string ResolveScenePath(string[] arguments)
     return candidates.FirstOrDefault(File.Exists)
         ?? throw new FileNotFoundException(
             "A cena padrão não foi encontrada. Informe o caminho do arquivo .scene.json.");
+}
+
+static async Task<int> RunFaultStudyAsync(
+    SceneDocument scene,
+    string scenePath,
+    TagDefinition containerDetected,
+    TagDefinition gateClosed,
+    TagDefinition fillValve,
+    TagDefinition filledVolume,
+    float flowLitersPerSecond,
+    string? requestedOutputPath)
+{
+    var results = FillingCellFaultStudy.Run(
+        scene.Tags,
+        new FillingCellStudyBindings(
+            containerDetected.Id,
+            gateClosed.Id,
+            fillValve.Id,
+            filledVolume.Id),
+        new FillingCellFaultStudyOptions
+        {
+            Step = TimeSpan.FromMilliseconds(scene.Simulation.LogicStepMilliseconds),
+            FlowLitersPerSecond = flowLitersPerSecond
+        });
+
+    Console.WriteLine($"Campanha de falhas: {scene.Name}");
+    Console.WriteLine("Cenário | Esperado | Volume físico | Volume indicado | Divergência do comando");
+    foreach (var result in results)
+    {
+        Console.WriteLine(
+            $"{result.Scenario} | {(result.ExpectationMet ? "SIM" : "NÃO")} | " +
+            $"{result.FinalPhysicalVolumeLiters.ToString("F3", CultureInfo.InvariantCulture)} L | " +
+            $"{result.FinalReportedVolumeLiters.ToString("F3", CultureInfo.InvariantCulture)} L | " +
+            $"{result.ValveCommandDivergenceSteps} passos");
+        Console.WriteLine($"  {result.Observation}");
+    }
+
+    Console.WriteLine($"Cena: {scenePath}");
+    if (!string.IsNullOrWhiteSpace(requestedOutputPath))
+    {
+        var outputPath = Path.GetFullPath(requestedOutputPath);
+        var outputDirectory = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrWhiteSpace(outputDirectory))
+        {
+            Directory.CreateDirectory(outputDirectory);
+        }
+
+        await using var output = File.Create(outputPath);
+        await FillingCellFaultStudy.WriteCsvAsync(output, results);
+        Console.WriteLine($"CSV: {outputPath}");
+    }
+
+    return results.All(result => result.ExpectationMet) ? 0 : 3;
 }
 
 static TagDefinition FindTag(SceneDocument scene, string canonicalName)
@@ -156,3 +273,8 @@ static void PrintState(
         $"recipiente={(detected ? "sim" : "não")}, " +
         $"volume={volume.ToString("F3", CultureInfo.InvariantCulture)} L");
 }
+
+internal sealed record CliOptions(
+    string? ScenePath,
+    bool RunFaultStudy,
+    string? OutputPath);

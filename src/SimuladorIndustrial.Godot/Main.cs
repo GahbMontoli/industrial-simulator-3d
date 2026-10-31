@@ -70,6 +70,7 @@ public sealed partial class Main : Node
     private bool _externalControlEnabled;
     private double _modbusPollElapsedSeconds;
     private double _modbusReconnectElapsedSeconds;
+    private string _evidenceRunId = EvidenceExporter.CreateRunId();
 
     public override void _Ready()
     {
@@ -779,6 +780,7 @@ public sealed partial class Main : Node
     private void ResetSimulation()
     {
         _engine.Reset();
+        _evidenceRunId = EvidenceExporter.CreateRunId();
         UpdateVisuals(0d);
     }
 
@@ -967,7 +969,13 @@ public sealed partial class Main : Node
             var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
             var jsonPath = Path.Combine(directory, $"simulacao-{timestamp}.json");
             var csvPath = Path.Combine(directory, $"eventos-{timestamp}.csv");
-            var evidence = EvidenceExporter.Capture(_scene, _engine, _tags, _journal);
+            var telemetryPath = Path.Combine(directory, $"telemetria-{timestamp}.csv");
+            var evidence = EvidenceExporter.Capture(
+                _scene,
+                _engine,
+                _tags,
+                _journal,
+                runId: _evidenceRunId);
 
             await using (var json = File.Create(jsonPath))
             {
@@ -979,9 +987,14 @@ public sealed partial class Main : Node
                 await EvidenceExporter.WriteEventsCsvAsync(csv, evidence);
             }
 
-            _exportStatusLabel.Text = $"JSON + CSV salvos em\n{directory}";
+            await using (var telemetry = File.Create(telemetryPath))
+            {
+                await EvidenceExporter.WriteTagTelemetryCsvAsync(telemetry, evidence);
+            }
+
+            _exportStatusLabel.Text = $"JSON + eventos + telemetria salvos em\n{directory}";
             _exportStatusLabel.AddThemeColorOverride("font_color", new Color(0.30f, 0.88f, 0.64f));
-            GD.Print($"Evidência exportada: {jsonPath}; {csvPath}");
+            GD.Print($"Evidência exportada: {jsonPath}; {csvPath}; {telemetryPath}");
         }
         catch (Exception exception)
         {

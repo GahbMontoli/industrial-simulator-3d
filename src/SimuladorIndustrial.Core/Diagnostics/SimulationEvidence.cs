@@ -5,6 +5,7 @@ namespace SimuladorIndustrial.Core.Diagnostics;
 
 public sealed record SimulationEvidence(
     int SchemaVersion,
+    string RunId,
     DateTimeOffset ExportedAtUtc,
     Guid SceneId,
     string SceneName,

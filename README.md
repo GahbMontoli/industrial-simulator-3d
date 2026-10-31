@@ -87,10 +87,15 @@ O formato, as garantias de segurança e o pacote de motor demonstrativo estão e
 Diagnóstico e conexões:
 
 - **Diagnóstico** reúne saúde das tags, métricas, eventos e exportação de evidências em painéis roláveis;
+- cada exportação inclui uma amostra CSV de telemetria de tags com contrato v2, `run_id`, cena de origem, tick, UTC, valores bruto/efetivo, qualidade, falha e forçamento;
 - **Conexões** permite configurar papel cliente/servidor, host, porta e Unit ID do Modbus TCP sem editar JSON;
 - a configuração é validada antes de substituir a conexão ativa; a cena deve ser salva no Editor 3D para reutilização futura.
 
 ![Página de diagnóstico](docs/images/navegacao-diagnostico.png)
+
+A telemetria exportada representa o estado no instante da captura. Ela é adequada
+para rastreabilidade e ingestão no Power BI, mas ainda não constitui um histórico
+contínuo por tick nem evidencia comportamento de equipamento real.
 
 ## Executar validação no console
 

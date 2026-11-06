@@ -39,3 +39,18 @@ public sealed record TagEvidence(
     TagFault Fault,
     long LastChangedTick,
     DateTimeOffset LastChangedAtUtc);
+
+public sealed record TagTelemetryExportManifest(
+    int SchemaVersion,
+    int TelemetrySchemaVersion,
+    string ProjectId,
+    string EvidenceClass,
+    string EvidenceLimit,
+    string RunId,
+    Guid SceneId,
+    long Tick,
+    DateTimeOffset ObservedAtUtc,
+    string TelemetryFile,
+    int Rows,
+    long Bytes,
+    string Sha256);

@@ -88,6 +88,7 @@ Diagnóstico e conexões:
 
 - **Diagnóstico** reúne saúde das tags, métricas, eventos e exportação de evidências em painéis roláveis;
 - cada exportação inclui uma amostra CSV de telemetria de tags com contrato v2, `run_id`, cena de origem, tick, UTC, valores bruto/efetivo, qualidade, falha e forçamento;
+- a amostra de telemetria possui manifesto JSON com versão, classe `synthetic`, limite interpretativo, contagem, tamanho e SHA-256 do CSV;
 - **Conexões** permite configurar papel cliente/servidor, host, porta e Unit ID do Modbus TCP sem editar JSON;
 - a configuração é validada antes de substituir a conexão ativa; a cena deve ser salva no Editor 3D para reutilização futura.
 

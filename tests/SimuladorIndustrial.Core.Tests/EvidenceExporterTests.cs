@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using SimuladorIndustrial.Core.Diagnostics;
@@ -87,6 +88,79 @@ public sealed class EvidenceExporterTests
         Assert.Equal("alwaysOn", changedFields[12]);
         Assert.Equal("true", changedFields[13]);
         Assert.Equal("4", changedFields[14]);
+    }
+
+    [Fact]
+    public async Task WritesAuditableManifestForTagTelemetrySnapshot()
+    {
+        var scene = LoadScene();
+        var journal = new EventJournal();
+        var tags = RegisterSceneTags(scene, journal);
+        var engine = new SimulationEngine(tags, journal);
+        var capturedAt = DateTimeOffset.Parse("2026-11-06T12:00:00Z");
+        var evidence = EvidenceExporter.Capture(
+            scene,
+            engine,
+            tags,
+            journal,
+            capturedAt,
+            "simulation-manifest-test");
+        var tempRoot = Path.GetFullPath(Path.GetTempPath())
+            .TrimEnd(Path.DirectorySeparatorChar);
+        var directory = Path.Combine(
+            tempRoot,
+            $"simulator-telemetry-manifest-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        var telemetryPath = Path.Combine(directory, "telemetria.csv");
+
+        try
+        {
+            await using (var telemetry = File.Create(telemetryPath))
+            {
+                await EvidenceExporter.WriteTagTelemetryCsvAsync(telemetry, evidence);
+            }
+
+            await using var manifestOutput = new MemoryStream();
+            await EvidenceExporter.WriteTagTelemetryManifestAsync(
+                manifestOutput,
+                evidence,
+                telemetryPath);
+
+            using var manifest = JsonDocument.Parse(manifestOutput.ToArray());
+            var root = manifest.RootElement;
+            Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal(2, root.GetProperty("telemetrySchemaVersion").GetInt32());
+            Assert.Equal("industrial-simulator-3d", root.GetProperty("projectId").GetString());
+            Assert.Equal("synthetic", root.GetProperty("evidenceClass").GetString());
+            Assert.Equal("simulation-manifest-test", root.GetProperty("runId").GetString());
+            Assert.Equal(scene.SceneId, root.GetProperty("sceneId").GetGuid());
+            Assert.Equal(scene.Tags.Count, root.GetProperty("rows").GetInt32());
+            Assert.Equal("telemetria.csv", root.GetProperty("telemetryFile").GetString());
+            Assert.Equal(new FileInfo(telemetryPath).Length, root.GetProperty("bytes").GetInt64());
+            Assert.Equal(
+                Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(telemetryPath)))
+                    .ToLowerInvariant(),
+                root.GetProperty("sha256").GetString());
+            Assert.Contains(
+                "não é histórico contínuo",
+                root.GetProperty("evidenceLimit").GetString(),
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            var cleanupPath = Path.GetFullPath(directory);
+            var comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            var safePrefix = $"{tempRoot}{Path.DirectorySeparatorChar}";
+            if (!cleanupPath.StartsWith(safePrefix, comparison))
+            {
+                throw new InvalidOperationException(
+                    $"Refusing to clean outside the temporary root: {cleanupPath}");
+            }
+
+            Directory.Delete(cleanupPath, recursive: true);
+        }
     }
 
     [Fact]

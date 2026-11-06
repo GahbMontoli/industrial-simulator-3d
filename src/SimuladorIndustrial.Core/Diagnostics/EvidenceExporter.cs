@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,7 @@ namespace SimuladorIndustrial.Core.Diagnostics;
 public static class EvidenceExporter
 {
     public const int CurrentSchemaVersion = 2;
+    public const int CurrentTelemetryManifestSchemaVersion = 1;
 
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
@@ -171,6 +173,64 @@ public static class EvidenceExporter
         }
 
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public static async ValueTask WriteTagTelemetryManifestAsync(
+        Stream destination,
+        SimulationEvidence evidence,
+        string telemetryPath,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureWritable(destination);
+        ArgumentNullException.ThrowIfNull(evidence);
+        ArgumentException.ThrowIfNullOrWhiteSpace(telemetryPath);
+        if (evidence.SchemaVersion != CurrentSchemaVersion)
+        {
+            throw new InvalidOperationException(
+                $"Telemetry schema version {evidence.SchemaVersion} is not supported; expected {CurrentSchemaVersion}.");
+        }
+
+        var fullTelemetryPath = Path.GetFullPath(telemetryPath);
+        if (!File.Exists(fullTelemetryPath))
+        {
+            throw new FileNotFoundException(
+                "The telemetry snapshot must exist before its manifest is written.",
+                fullTelemetryPath);
+        }
+
+        string sha256;
+        await using (var source = new FileStream(
+                         fullTelemetryPath,
+                         FileMode.Open,
+                         FileAccess.Read,
+                         FileShare.Read,
+                         bufferSize: 81_920,
+                         useAsync: true))
+        {
+            sha256 = Convert.ToHexString(
+                    await SHA256.HashDataAsync(source, cancellationToken).ConfigureAwait(false))
+                .ToLowerInvariant();
+        }
+
+        var file = new FileInfo(fullTelemetryPath);
+        var manifest = new TagTelemetryExportManifest(
+            CurrentTelemetryManifestSchemaVersion,
+            CurrentSchemaVersion,
+            "industrial-simulator-3d",
+            "synthetic",
+            "Snapshot temporal do software; não é histórico contínuo nem evidência de equipamento real.",
+            ValidateRunId(evidence.RunId),
+            evidence.SceneId,
+            evidence.Runtime.Tick,
+            evidence.ExportedAtUtc.ToUniversalTime(),
+            file.Name,
+            evidence.Tags.Count,
+            file.Length,
+            sha256);
+
+        await JsonSerializer.SerializeAsync(destination, manifest, JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static void EnsureWritable(Stream destination)

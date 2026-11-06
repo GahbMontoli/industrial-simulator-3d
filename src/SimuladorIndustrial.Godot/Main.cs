@@ -970,6 +970,9 @@ public sealed partial class Main : Node
             var jsonPath = Path.Combine(directory, $"simulacao-{timestamp}.json");
             var csvPath = Path.Combine(directory, $"eventos-{timestamp}.csv");
             var telemetryPath = Path.Combine(directory, $"telemetria-{timestamp}.csv");
+            var telemetryManifestPath = Path.Combine(
+                directory,
+                $"telemetria-{timestamp}.manifest.json");
             var evidence = EvidenceExporter.Capture(
                 _scene,
                 _engine,
@@ -992,9 +995,18 @@ public sealed partial class Main : Node
                 await EvidenceExporter.WriteTagTelemetryCsvAsync(telemetry, evidence);
             }
 
-            _exportStatusLabel.Text = $"JSON + eventos + telemetria salvos em\n{directory}";
+            await using (var telemetryManifest = File.Create(telemetryManifestPath))
+            {
+                await EvidenceExporter.WriteTagTelemetryManifestAsync(
+                    telemetryManifest,
+                    evidence,
+                    telemetryPath);
+            }
+
+            _exportStatusLabel.Text = $"JSON + eventos + telemetria/manifesto salvos em\n{directory}";
             _exportStatusLabel.AddThemeColorOverride("font_color", new Color(0.30f, 0.88f, 0.64f));
-            GD.Print($"Evidência exportada: {jsonPath}; {csvPath}; {telemetryPath}");
+            GD.Print(
+                $"Evidência exportada: {jsonPath}; {csvPath}; {telemetryPath}; {telemetryManifestPath}");
         }
         catch (Exception exception)
         {

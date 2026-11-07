@@ -14,6 +14,9 @@ public static class EvidenceExporter
     public const int CurrentSchemaVersion = 2;
     public const int CurrentTelemetryManifestSchemaVersion = 1;
 
+    private const string TelemetryHeader =
+        "schema_version,run_id,scene_id,tick,observed_at_utc,tag_id,canonical_name,data_type,direction,raw_value,effective_value,quality,fault,is_forced,last_changed_tick,last_changed_at_utc";
+
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     public static SimulationEvidence Capture(
@@ -144,8 +147,7 @@ public static class EvidenceExporter
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
             bufferSize: 1_024,
             leaveOpen: true);
-        await writer.WriteLineAsync(
-                "schema_version,run_id,scene_id,tick,observed_at_utc,tag_id,canonical_name,data_type,direction,raw_value,effective_value,quality,fault,is_forced,last_changed_tick,last_changed_at_utc")
+        await writer.WriteLineAsync(TelemetryHeader)
             .ConfigureAwait(false);
 
         foreach (var tag in evidence.Tags)
@@ -198,6 +200,8 @@ public static class EvidenceExporter
                 fullTelemetryPath);
         }
 
+        ValidateTelemetrySnapshotFile(fullTelemetryPath, evidence);
+
         string sha256;
         await using (var source = new FileStream(
                          fullTelemetryPath,
@@ -231,6 +235,44 @@ public static class EvidenceExporter
         await JsonSerializer.SerializeAsync(destination, manifest, JsonOptions, cancellationToken)
             .ConfigureAwait(false);
         await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static void ValidateTelemetrySnapshotFile(
+        string telemetryPath,
+        SimulationEvidence evidence)
+    {
+        using var reader = new StreamReader(telemetryPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        var header = reader.ReadLine()?.TrimStart('\uFEFF');
+        if (!string.Equals(header, TelemetryHeader, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("The telemetry snapshot header does not match contract v2.");
+        }
+
+        var expectedPrefix = string.Join(
+            ',',
+            evidence.SchemaVersion.ToString(CultureInfo.InvariantCulture),
+            ValidateRunId(evidence.RunId),
+            evidence.SceneId.ToString("D"),
+            evidence.Runtime.Tick.ToString(CultureInfo.InvariantCulture),
+            evidence.ExportedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)) + ',';
+        var rows = 0;
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (!line.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The telemetry snapshot provenance does not match the manifest evidence.");
+            }
+
+            rows++;
+        }
+
+        if (rows != evidence.Tags.Count)
+        {
+            throw new InvalidDataException(
+                "The telemetry snapshot row count does not match the manifest evidence.");
+        }
     }
 
     private static void EnsureWritable(Stream destination)

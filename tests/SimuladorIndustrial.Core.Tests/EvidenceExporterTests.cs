@@ -164,6 +164,51 @@ public sealed class EvidenceExporterTests
     }
 
     [Fact]
+    public async Task RejectsTelemetryManifestWhenCsvProvenanceDoesNotMatch()
+    {
+        var scene = LoadScene();
+        var journal = new EventJournal();
+        var tags = RegisterSceneTags(scene, journal);
+        var engine = new SimulationEngine(tags, journal);
+        var evidence = EvidenceExporter.Capture(
+            scene,
+            engine,
+            tags,
+            journal,
+            DateTimeOffset.Parse("2026-11-07T12:00:00Z"),
+            "expected-run");
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"simulator-telemetry-provenance-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        var telemetryPath = Path.Combine(directory, "telemetria.csv");
+
+        try
+        {
+            await using (var telemetry = File.Create(telemetryPath))
+            {
+                await EvidenceExporter.WriteTagTelemetryCsvAsync(telemetry, evidence);
+            }
+
+            var csv = await File.ReadAllTextAsync(telemetryPath);
+            await File.WriteAllTextAsync(
+                telemetryPath,
+                csv.Replace("expected-run", "different-run", StringComparison.Ordinal));
+            await using var manifest = new MemoryStream();
+
+            await Assert.ThrowsAsync<InvalidDataException>(async () =>
+                await EvidenceExporter.WriteTagTelemetryManifestAsync(
+                    manifest,
+                    evidence,
+                    telemetryPath));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void RejectsUnsafeRunIdentifier()
     {
         var scene = LoadScene();
